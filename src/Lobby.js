@@ -38,10 +38,10 @@ function Lobby() {
                 <div>
                     <h2>Players:</h2>
                     <ul>
-                        {lobbyData.players.map((player, index) => (
-                            <li key={index}>
+                        {lobbyData.players.map((player) => (
+                            <p>
                                 {player.playerName} ({player.playerType})
-                            </li>
+                            </p>
                         ))}
                     </ul>
                 </div>
