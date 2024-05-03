@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import logo from './logo.svg';
 import './Join.css';
+import { createBrowserHistory } from 'history';
+
+export const browserHistory = createBrowserHistory();
+
 
 function Join() {
   const [serverResponse, setServerResponse] = useState(null);
@@ -13,7 +17,7 @@ function Join() {
   inputElements.forEach((inputElement) => {
     inputElement.addEventListener('mouseover', () => {
       inputElement.style.transition = 'box-shadow 0.3s ease';
-      inputElement.style.boxShadow = '0 0 3em rgba(51, 153, 255, 0.5)';
+      inputElement.style.boxShadow = '0 0 100px rgba(51, 153, 255, 0.5)';
     });
 
     inputElement.addEventListener('mouseout', () => {
@@ -29,7 +33,13 @@ function Join() {
         lobbyId: lobbyId
       });
 
-      setServerResponse(response.data);
+      localStorage.setItem("lobbyId", response.data)
+      console.log(response.data.lobbyId)
+      browserHistory.push({
+        pathname: '/lobby',
+        state: { lobbyId: response.data }
+      });
+      window.location.reload();
     } catch (error) {
       setServerResponse("This user already exist in lobby")
       console.error('Error sending data: ', error);

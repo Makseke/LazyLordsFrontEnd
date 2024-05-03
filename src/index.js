@@ -2,12 +2,26 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import Join from './Join';
+import Lobby from './Lobby';
 import reportWebVitals from './reportWebVitals';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+
+const router = createBrowserRouter([
+    {
+        path: '/',
+        element: <Join />
+    },
+    {
+        path: '/lobby',
+        element: <Lobby />
+    }
+])
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <Join />
+      <RouterProvider router={router}></RouterProvider>
   </React.StrictMode>
 );
 
