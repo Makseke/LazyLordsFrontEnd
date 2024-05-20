@@ -1,51 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import axios from 'axios';
+import logo from './logo.svg';
+import './Join.css';
+import './Lobby.css';
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
+import {browserHistory} from "./Join";
 
 function Lobby() {
-    const [lobbyData, setLobbyData] = useState(null);
+    const [stompClient, setStompClient] = useState(Stomp.over(new SockJS('http://127.0.0.1:8080/ws')));
+    const [lobbyId, setLobbyId] = useState("");
 
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            updateLobby();
-        }, 5000);
+        setLobbyId(localStorage.getItem("lobbyId"))
 
-        // Вызываем updateLobby при первой загрузке страницы
-        updateLobby();
+        stompClient.connect({}, function (frame) {
+            stompClient.subscribe('/topic/game/' + localStorage.getItem('lobbyId'), function (message) {
+                const receivedData = JSON.parse(message.body);
+            });
+        });
 
-        // Очищаем интервал при разmonting компонента
-        return () => clearInterval(intervalId);
     }, []);
 
-    const updateLobby = async () => {
+    const leaveGame = async () => {
         try {
-            const response = await axios.get('http://127.0.0.1:8080/lazylords/lobby', {
-                params: {
-                    lobbyId: localStorage.getItem('lobbyId')
-                }
+            // if (stompClient) {
+            //     stompClient.send("/app/game/leave" + lobbyId, {}, username);
+            // }
+            browserHistory.push({
+                pathname: '/',
             });
-            setLobbyData(response.data);
-            console.log("UPDATED")
+            window.location.reload();
+
         } catch (error) {
             console.error('Error sending data: ', error);
         }
     };
 
     return (
+        <div className="game">
+        <header>
+            <div>
+                <button onClick={leaveGame}>Back</button>
+            </div>
+        </header>
         <div>
-            <h1>Lobby</h1>
-            <p>Lobby ID: {localStorage.getItem('lobbyId')}</p>
-            {lobbyData && (
-                <div>
-                    <h2>Players:</h2>
-                    <ul>
-                        {lobbyData.players.map((player) => (
-                            <p>
-                                {player.playerName} ({player.playerType})
-                            </p>
-                        ))}
-                    </ul>
-                </div>
-            )}
+        <div>
+            <h1>Game</h1>
+        </div>
+        </div>
         </div>
     );
 }

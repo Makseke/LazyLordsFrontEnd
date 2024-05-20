@@ -1,72 +1,162 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import axios from 'axios';
 import logo from './logo.svg';
 import './Join.css';
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
 import { createBrowserHistory } from 'history';
 
 export const browserHistory = createBrowserHistory();
 
-
 function Join() {
-  const [serverResponse, setServerResponse] = useState(null);
+    const [serverResponse, setServerResponse] = useState(null);
+    const [players, setPlayers] = useState([]);
+    const [inLobby, setInLobby] = useState(false);
+    const [username, setUsername] = useState('');
+    const [lobbyId, setLobbyId] = useState('');
+    const [connectedLobbyId, setConnectedLobbyId] = useState('');
+    const [stompClient, setStompClient] = useState(null);
+    const [connectionTries, setConnectionTries] = useState(0);
 
-  const [username, setUsername] = useState('');
-  const [lobbyId, setLobbyId] = useState('');
-  const inputElements = document.querySelectorAll('input[type="text"]');
+    const connectWebSocket = useCallback(() => {
+        const socket = new SockJS('http://127.0.0.1:8080/ws');
+        const client = Stomp.over(socket);
 
-  inputElements.forEach((inputElement) => {
-    inputElement.addEventListener('mouseover', () => {
-      inputElement.style.transition = 'box-shadow 0.3s ease';
-      inputElement.style.boxShadow = '0 0 100px rgba(51, 153, 255, 0.5)';
-    });
+        client.connect({}, function(frame) {
+            setStompClient(client);
+            setConnectionTries(0); // Reset the connection tries on successful connection
+        }, function(error) {
+            console.error('WebSocket connection error:', error);
+            if (connectionTries < 3) {
+                setTimeout(() => {
+                    setConnectionTries(prev => prev + 1);
+                    connectWebSocket();
+                }, 5000); // Retry connection after 5 seconds
+            } else {
+                setServerResponse('Could not connect to WebSocket server. Please try again later.');
+            }
+        });
 
-    inputElement.addEventListener('mouseout', () => {
-      inputElement.style.transition = 'box-shadow 0.3s ease';
-      inputElement.style.boxShadow = 'none';
-    });
-  });
+        socket.onclose = function() {
+            console.warn('WebSocket connection closed. Attempting to reconnect...');
+            if (connectionTries < 3) {
+                setTimeout(() => {
+                    setConnectionTries(prev => prev + 1);
+                    connectWebSocket();
+                }, 5000); // Retry connection after 5 seconds
+            }
+        };
+    }, [connectionTries]);
 
-  const handleButtonClick = async () => {
-    try {
-      const response = await axios.post('http://127.0.0.1:8080/lazylords/join', {
-        username: username,
-        lobbyId: lobbyId
-      });
+    useEffect(() => {
+        connectWebSocket();
+    }, [connectWebSocket]);
 
-      localStorage.setItem("lobbyId", response.data)
-      console.log(response.data.lobbyId)
-      browserHistory.push({
-        pathname: '/lobby',
-        state: { lobbyId: response.data }
-      });
-      window.location.reload();
-    } catch (error) {
-      setServerResponse("This user already exist in lobby")
-      console.error('Error sending data: ', error);
-    }
-  };
+    const handleButtonClick = async () => {
+        try {
+            const response = await axios.post('http://127.0.0.1:8080/join', {
+                username: username,
+                lobbyId: lobbyId
+            });
 
-  const handleUsernameInputChange = (event) => {
-    setUsername(event.target.value);
-  };
+            let conLobbyId = response.data;
+            localStorage.setItem("lobbyId", conLobbyId);
+            localStorage.setItem("name", username);
+            setConnectedLobbyId(response.data);
+            console.log('Received response: ', conLobbyId);
 
-  const handleLobbyIdInputChange = (event) => {
-    setLobbyId(event.target.value);
-  };
+            stompClient.subscribe('/topic/lobby/' + conLobbyId, function(message) {
+                const receivedData = JSON.parse(message.body);
+                const eventType = receivedData.headers.type[0];
+                if (eventType === 'update' || eventType === 'leave') {
+                    setPlayers(receivedData.body.players);
+                } else if (eventType === 'start') {
+                    stompClient.unsubscribe('/topic/lobby/' + connectedLobbyId, function(message) {});
+                    browserHistory.push({
+                        pathname: '/lobby',
+                        state: { lobbyId: connectedLobbyId }
+                    });
+                    window.location.reload();
+                }
+            });
 
-  return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
+            if (stompClient) {
+                stompClient.send("/app/join/" + conLobbyId, {});
+            }
 
-          <input type="text" value={username} onChange={handleUsernameInputChange} />
-          <input type="text" value={lobbyId} onChange={handleLobbyIdInputChange} />
-          <button onClick={handleButtonClick}>Send data</button>
+            setInLobby(true);
+        } catch (error) {
+            setServerResponse("This user already exists in lobby");
+            console.error('Error sending data: ', error);
+        }
+    };
 
-          {serverResponse && <p>{serverResponse}</p>}
-        </header>
-      </div>
-  );
+    const leaveLobby = async () => {
+        try {
+            if (stompClient) {
+                stompClient.send("/app/leave/" + connectedLobbyId, {}, username);
+            }
+            stompClient.unsubscribe('/topic/lobby/' + connectedLobbyId, function(message) {});
+            setInLobby(false);
+        } catch (error) {
+            setServerResponse("Error leaving the lobby");
+            console.error('Error sending data: ', error);
+        }
+    };
+
+    const startGame = async () => {
+        try {
+            if (stompClient) {
+                stompClient.send("/app/start/" + connectedLobbyId, {}, username);
+            }
+            stompClient.unsubscribe('/topic/lobby/' + connectedLobbyId, function(message) {});
+            browserHistory.push({
+                pathname: '/lobby',
+                state: { lobbyId: connectedLobbyId }
+            });
+            window.location.reload();
+        } catch (error) {
+            setServerResponse("Error starting the game");
+            console.error('Error sending data: ', error);
+        }
+    };
+
+    const handleUsernameInputChange = (event) => {
+        setUsername(event.target.value);
+    };
+
+    const handleLobbyIdInputChange = (event) => {
+        setLobbyId(event.target.value);
+    };
+
+    return (
+        <div className="App">
+            <img src={logo} className="App-logo" alt="logo" />
+            {inLobby === false && (
+                <div>
+                    <input type="text" value={username} onChange={handleUsernameInputChange} />
+                    <input type="text" value={lobbyId} onChange={handleLobbyIdInputChange} />
+                    <button onClick={handleButtonClick}>Join lobby</button>
+                </div>
+            )}
+            {inLobby === true && (
+                <div>
+                    {connectedLobbyId && <p>Lobby ID: {connectedLobbyId}</p>}
+                    {serverResponse && <p>{serverResponse}</p>}
+                    <h3>Players: {players.length}</h3>
+                    <ul>
+                        {players.map((player, index) => (
+                            <li key={index}>
+                                {player.playerName} ({player.playerType})
+                            </li>
+                        ))}
+                    </ul>
+                    <button onClick={leaveLobby}>Leave lobby</button>
+                    {lobbyId === "" && <button onClick={startGame}>Start game</button>}
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default Join;
