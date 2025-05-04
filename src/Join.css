@@ -1,37 +1,57 @@
+.body{
+  font-family: 'Inter', serif;
+  font-weight: 700;
+}
+
 .App {
   text-align: start;
   background-color: #596A71;
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   font-size: calc(10px + 2vmin);
   color: white;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.App-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+  margin: 0;
+  z-index: 1;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.App-bgimage {
+  z-index: 0;
+  position: absolute;
+  right: 0;
+  height: 100vh;
+  mask-image: url("mask.svg");
+  mask-repeat: no-repeat;
+  mask-position: right;
+  mask-size: auto 100vh;
+
+}
+
+.App-mask {
+  opacity: 0;
+  right: 0;
+  height: 99vh;
+  color: #48565d;
+}
+
+.App-logo {
+  height: 20vmin;
+  pointer-events: none;
 }
 
 .App-link {
   color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 input[type="text"] {
@@ -44,6 +64,9 @@ input[type="text"] {
   font-size: 16px;
   color: #333;
   transition: border-color 0.3s ease;
+
+  font-family: 'Inter', serif;
+  font-weight: 700;
 }
 
 input[type="text"]:focus {
@@ -54,10 +77,134 @@ button {
   margin: 1vh;
   border-radius: 10px;
   min-width: 150px;
+  min-height: 30px;
   width: 10vw;
   max-width: 250px;
   height: 5vh;
   border-width: 0;
   color: #596A71;
   background-color: #EADD46;
+  font-family: 'Inter', serif;
+  font-weight: 700;
+  font-size: calc(20px);
+  transition: font-size 0.3s ease;
+}
+
+button:hover {
+  font-size: calc(22px);
+}
+
+.player-field {
+  padding: 10px;
+  background-color: #6A7E86;
+  border-radius: 10px;
+  margin: 1vh 0 1vh 0;
+  font-family: 'Inter', serif;
+  font-weight: 700;
+  font-size: calc(25px);
+}
+
+.player-field invite-friend{
+
+}
+
+ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.lobby_id_body {
+  font-family: 'Inter', serif;
+  font-weight: 700;
+  font-size: calc(25px);
+}
+
+.lobby_id_body p {
+  margin: 2vh 0 2vh 0;
+}
+
+.lobby_id_field {
+  background-color: #6A7E86;
+  padding: 10px;
+  border-radius: 10px;
+  font-family: 'Inter', serif;
+  font-weight: 700;
+  font-size: calc(25px);
+  transition: background-color 0.3s ease;
+}
+
+.lobby_id_field:active {
+  background-color: #4a5a64;
+}
+
+/*player_info_blocks*/
+.user_info_block {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 23vw;
+  margin: 0;
+}
+
+.avatar_block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar_image {
+  width: 8vw;
+  position: absolute;
+}
+
+.avatar_bg {
+  width: 8.1vw;
+  height: 8.1vw;
+  border-radius: 50%;
+  border-color: #D9D9D9;
+  border-style: solid;
+  border-width: 5px;
+}
+
+.update_avatar_button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: 2.5vw;
+  height: 2.5vw;
+  border-radius: 50%;
+  background-color: #EADD46;
+  margin-left: 7%;
+  margin-top: 5%;
+}
+
+.update_icon {
+  width: 2vw;
+  color: #596A71;
+}
+
+.player_name_field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.player_name_field p {
+  margin: 0;
+  font-family: 'Inter', serif;
+  font-weight: 700;
+  font-size: calc(20px);
+}
+
+/*join screen*/
+.join_screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
